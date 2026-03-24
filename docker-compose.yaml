@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:17.6
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+
+  redpanda:
+    image: redpandadata/redpanda:latest
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - 1G
+      - --reserve-memory
+      - 0M
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - "internal://0.0.0.0:29092,external://0.0.0.0:9092"
+      - --advertise-kafka-addr
+      - "internal://redpanda:29092,external://localhost:9092"
+    ports:
+      - "9092:9092"
+
+  redpanda-console:
+    image: redpandadata/console:latest
+    depends_on:
+      - redpanda
+    ports:
+      - "8888:8080"
+    environment:
+      KAFKA_BROKERS: "redpanda:29092"
