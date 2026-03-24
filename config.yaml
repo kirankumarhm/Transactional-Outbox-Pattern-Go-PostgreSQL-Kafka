@@ -1,0 +1,26 @@
+server:
+  port: ":8080"
+  readHeaderTimeout: "5s"
+  shutdownTimeout: "10s"
+
+db:
+  url: "postgres://postgres:admin@localhost:5433/postgres?sslmode=disable"
+  maxConns: 20
+  minConns: 2
+  maxConnLifetime: "30m"
+  maxConnIdleTime: "5m"
+
+kafka:
+  brokers: "localhost:9092"
+  topic: "orders.events"
+  retries: 10
+  lingerMs: 5
+  batchNumMessages: 10000
+  compressionType: "snappy"
+  maxSendRetries: 10
+  flushTimeoutMs: 10000
+
+outbox:
+  batchSize: 50
+  interval: "500ms"
+  maxAttempts: 10
