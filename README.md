@@ -343,9 +343,24 @@ outbox:
 
 ### Prerequisites
 
-- Go 1.26+
-- Docker & Docker Compose
-- [sqlc](https://docs.sqlc.dev/en/latest/overview/install.html) (for regenerating query code)
+**Software:**
+
+| Tool | Version | Purpose | Install |
+|---|---|---|---|
+| Go | 1.26+ | Application runtime & build | [go.dev/dl](https://go.dev/dl/) or `brew install go` |
+| Docker | 20.10+ | Run PostgreSQL, Redpanda, Console | [docs.docker.com](https://docs.docker.com/get-docker/) |
+| Docker Compose | v2+ | Orchestrate multi-container setup | Included with Docker Desktop |
+| sqlc | 1.30+ | Generate type-safe Go code from SQL | [docs.sqlc.dev](https://docs.sqlc.dev/en/latest/overview/install.html) or `brew install sqlc` |
+| curl | any | Test API endpoints | Pre-installed on macOS/Linux |
+| jq *(optional)* | any | Pretty-print JSON responses | `brew install jq` |
+
+**Knowledge (helpful but not required):**
+
+- Basic Go (structs, interfaces, goroutines, channels)
+- SQL fundamentals (INSERT, SELECT, UPDATE, transactions)
+- What Kafka topics, partitions, and producers are
+- REST API concepts (HTTP methods, JSON)
+- Docker basics (containers, ports, volumes)
 
 ### 1. Start Infrastructure
 
@@ -386,7 +401,30 @@ CREATE INDEX
 CREATE INDEX
 ```
 
-### 3. Run the Application
+### 3. Generate Type-Safe Query Code (sqlc)
+
+The project uses [sqlc](https://sqlc.dev) to generate type-safe Go code from the SQL schema and queries. The generated code is already committed in `internal/db/sqlc/`, but if you modify `sql/schema.sql` or `sql/queries.sql`, regenerate it:
+
+```bash
+sqlc generate
+```
+
+This reads `sqlc.yaml` and generates:
+- `internal/db/sqlc/db.go` — DBTX interface and Queries struct
+- `internal/db/sqlc/models.go` — Go structs matching the DB tables
+- `internal/db/sqlc/queries.sql.go` — Type-safe functions for each SQL query
+
+> **Note:** You can skip this step if you haven't changed any SQL files — the generated code is already up to date.
+
+### 4. Install Go Dependencies
+
+```bash
+go mod tidy
+```
+
+This downloads all required Go modules (Gin, pgx, confluent-kafka-go, etc.) and updates `go.sum`.
+
+### 5. Run the Application
 
 ```bash
 go run ./cmd/api
@@ -400,7 +438,7 @@ You should see:
 HTTP listening on :8080
 ```
 
-### 4. Create an Order
+### 6. Create an Order
 
 ```bash
 curl -X POST http://localhost:8080/orders \
@@ -538,18 +576,6 @@ docker exec -it $(docker ps -q -f name=redpanda-1) \
 | `version "go1.23.5" does not match go tool version "go1.26.1"` | Stale Go installation at `/usr/local/go` | Set `export GOROOT=/opt/homebrew/opt/go/libexec` in your `~/.zshrc` and run `source ~/.zshrc` |
 | Connection refused on port `5433` | PostgreSQL container not running | Run `docker compose up -d` |
 | No messages in Kafka topic | Publisher hasn't run yet | Events are polled every 500ms; wait and re-check |
-
----
-
-## Regenerating sqlc Code
-
-If you modify `sql/schema.sql` or `sql/queries.sql`:
-
-```bash
-sqlc generate
-```
-
-This regenerates the type-safe Go code in `internal/db/sqlc/`.
 
 ---
 
